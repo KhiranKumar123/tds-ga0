@@ -507,3 +507,13 @@ async def root_post_multiplex(request: Request):
             })
         return {"results": results}
     return {"message": "TDS Assessment Serverless Backend"}
+
+
+@app.get("/submission.tar.gz")
+def get_submission_tarball():
+    tar_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "submission.tar.gz")
+    if os.path.exists(tar_path):
+        with open(tar_path, "rb") as f:
+            content = f.read()
+        return Response(content=content, media_type="application/gzip", headers={"Content-Disposition": "attachment; filename=submission.tar.gz"})
+    return Response(status_code=404, content="submission.tar.gz not found")
