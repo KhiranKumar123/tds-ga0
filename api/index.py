@@ -151,6 +151,8 @@ def latency_analytics(req: LatencyRequest):
 # ===========================================================================
 
 # ===========================================================================
+
+# ===========================================================================
 # GA1 Endpoints
 # ===========================================================================
 import hashlib
@@ -306,13 +308,13 @@ def solve_ledger_question(q: str):
     
     target_region = None
     for r in ALL_REGIONS:
-        if r.lower() in q_lower:
+        if re.search(rf'\b{r}\b', q, re.IGNORECASE):
             target_region = r
             break
             
     target_product = None
     for p in ALL_PRODUCTS:
-        if p.lower() in q_lower:
+        if re.search(rf'\b{re.escape(p)}\b', q, re.IGNORECASE):
             target_product = p
             break
             
@@ -409,7 +411,8 @@ def solve_ledger_question(q: str):
             conditions.append("status = 'paid'")
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         metric = "SUM(qty)" if any(k in q_lower for k in ["quantity", "unit", "volume", "pieces"]) else "SUM(amount_usd)"
-        direction = "ASC" if any(k in q_lower for k in ["least", "lowest", "worst", "fewest"]) else "DESC"
+        is_least = bool(re.search(r'\b(lowest|fewest|worst)\b', q_lower) or (re.search(r'\bleast\b', q_lower) and not re.search(r'\bat least\b', q_lower)))
+        direction = "ASC" if is_least else "DESC"
         query = f"SELECT product FROM orders {where_clause} GROUP BY product ORDER BY {metric} {direction} LIMIT 1"
         ledger_cur.execute(query, params)
         res = ledger_cur.fetchone()
@@ -421,7 +424,8 @@ def solve_ledger_question(q: str):
             conditions.append("status = 'paid'")
         where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
         metric = "SUM(qty)" if any(k in q_lower for k in ["quantity", "unit", "volume", "pieces"]) else "SUM(amount_usd)"
-        direction = "ASC" if any(k in q_lower for k in ["least", "lowest", "worst", "fewest"]) else "DESC"
+        is_least = bool(re.search(r'\b(lowest|fewest|worst)\b', q_lower) or (re.search(r'\bleast\b', q_lower) and not re.search(r'\bat least\b', q_lower)))
+        direction = "ASC" if is_least else "DESC"
         query = f"SELECT region FROM orders {where_clause} GROUP BY region ORDER BY {metric} {direction} LIMIT 1"
         ledger_cur.execute(query, params)
         res = ledger_cur.fetchone()
